@@ -1,0 +1,789 @@
+[
+    {
+        "id": "d427d164.4e1d18",
+        "type": "tab",
+        "label": "BlockChain Storm Dashboard",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "b7807be6.c5f458",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Blockchain Asset response",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 1020,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "be445f76.7f8ac",
+        "type": "ui_form",
+        "z": "d427d164.4e1d18",
+        "name": "Transaction Form",
+        "label": "Create Alert",
+        "group": "67d891a9.f3673",
+        "order": 4,
+        "width": "0",
+        "height": "0",
+        "options": [
+            {
+                "label": "Description",
+                "value": "alertMessage",
+                "type": "text",
+                "required": false
+            }
+        ],
+        "formValue": {
+            "alertMessage": ""
+        },
+        "payload": "",
+        "topic": "",
+        "x": 330,
+        "y": 1160,
+        "wires": [
+            [
+                "8a201b7c.4156b8"
+            ]
+        ]
+    },
+    {
+        "id": "bdac0f9.382b0f",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Alert Transaction",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 990,
+        "y": 1200,
+        "wires": []
+    },
+    {
+        "id": "8a201b7c.4156b8",
+        "type": "function",
+        "z": "d427d164.4e1d18",
+        "name": "Prepare Blockchain New Alert transaction",
+        "func": "var formdata = msg.payload;\nmsg.payload = {};\n\nvar CurrentStorm = flow.get(\"CurrentStorm\");\n\n// No storm is selected.\nif( typeof(CurrentStorm) == 'undefined' ) {\n    return null;\n}\nif( CurrentStorm === null) {\n    return null;\n}\n//{\"$class\": \"org.acme.sample.Alert\",\"storm\": \"resource:org.acme.sample.Storm#1512695376584.923\",\"alertId\":\"44\",\"alertMessage\":\"Storm Surge\"}\n// Create a new Alert\nmsg.payload = {\n    \"$class\": \"org.acme.sample.Alert\",\n    \"storm\": \"resource:org.acme.sample.Storm#\"+CurrentStorm.stormId,\n    \"alertId\": Math.round(Math.random()*100).toString(),\n    \"alertMessage\": formdata.alertMessage,\n    \"timestamp\": Date.now()\n}\nAlertMsg = JSON.stringify(msg.payload);\nmsg.url = \"http://<your-hyperledger-fabric-ip>:31090/api/Alert?data=\"+AlertMsg;\nmsg.headers = {\n    \"Content-Type\":\"application/json\",\n    \"Accept\":\"application/json\"\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 660,
+        "y": 1160,
+        "wires": [
+            [
+                "bdac0f9.382b0f",
+                "98418537.943cf8"
+            ]
+        ]
+    },
+    {
+        "id": "fafee044.768ae8",
+        "type": "ui_dropdown",
+        "z": "d427d164.4e1d18",
+        "name": "",
+        "label": "",
+        "place": "Select storm",
+        "group": "67d891a9.f3673",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "",
+        "x": 960,
+        "y": 280,
+        "wires": [
+            [
+                "5df1a362.44f634",
+                "b093ec6f.8ac608"
+            ]
+        ]
+    },
+    {
+        "id": "abe2c464.8e7268",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Blockchain Transaction Response",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 1340,
+        "y": 1200,
+        "wires": []
+    },
+    {
+        "id": "d13ca284.fc6ea8",
+        "type": "ui_form",
+        "z": "d427d164.4e1d18",
+        "name": "Create a Storm Event Form",
+        "label": "Enter New Storm name",
+        "group": "ed77f8b5.4b2178",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Storm Name",
+                "value": "stormName",
+                "type": "text",
+                "required": true
+            },
+            {
+                "label": "Initial Severity",
+                "value": "severity",
+                "type": "number",
+                "required": true
+            }
+        ],
+        "formValue": {
+            "stormName": "",
+            "severity": ""
+        },
+        "payload": "",
+        "topic": "",
+        "x": 180,
+        "y": 100,
+        "wires": [
+            [
+                "16e25daa.25e04a",
+                "3ebda64.3d9295a"
+            ]
+        ]
+    },
+    {
+        "id": "16e25daa.25e04a",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "New Storm",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 410,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "3ebda64.3d9295a",
+        "type": "function",
+        "z": "d427d164.4e1d18",
+        "name": "Begin Storm Txn",
+        "func": "var stormName = msg.payload.stormName;\n// Create a unique BlockChain Asset ID that will be unique across\n// many instances of this Node-RED flow across many systems\nvar stormId = Date.now() + (Math.random()*10000);\n\nvar severity = msg.payload.severity;\nif( severity > 5 || severity < 0) {\n    severity = 0;\n}\n\nmsg.payload = {\n    \"$class\":\"org.acme.sample.Storm\",\n    \"stormId\": stormId.toString(),\n    \"stormName\": stormName,\n    \"severity\": \"CATEGORY_\"+severity\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 430,
+        "y": 100,
+        "wires": [
+            [
+                "22f01c4a.10bdf4",
+                "508a9854.55a2f8"
+            ]
+        ]
+    },
+    {
+        "id": "22f01c4a.10bdf4",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Storm Asset",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 630,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "efc53db8.8345a",
+        "type": "ui_template",
+        "z": "d427d164.4e1d18",
+        "group": "67d891a9.f3673",
+        "name": "",
+        "order": 0,
+        "width": "6",
+        "height": "7",
+        "format": "<div ng-bind-html=\"msg.template\"></div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "templateScope": "local",
+        "x": 1340,
+        "y": 580,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e5871660.65f41",
+        "type": "function",
+        "z": "d427d164.4e1d18",
+        "name": "Build Alert Listing Table",
+        "func": "// There are no Storms selected in the dropdown, clear the table\nif( msg.payload === false ) {\n    msg.template = \"\";\n    return msg;\n}\n// There are no Alerts for this Storm\nif( typeof msg.payload.alertListing == 'undefined') {\n//    msg.template = \"\";\n    msg.template=\"<style>h4 { text-align: center; margin: 10px; }\";\n    msg.template=msg.template+\"table {    margin-top: 10px; }\";\n    msg.template=msg.template+\"th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; background-color: #FFFFFF; width: 50%;}\";\n    msg.template=msg.template+\".classifier {background-color: rgb(85,150,230);text-align: center;}\";\n    msg.template=msg.template+\".title { background-color:LightGrey;}</style>\";\n\n    msg.template=msg.template+\"<table span=100%><tr><th>No Alerts for Storm \"+msg.payload.stormName+\"</th>\";\n    msg.template = msg.template + \"</table>\"\n    return msg;\n}\nvar StormAlerts = msg.payload.alertListing;\n\nvar arrayLength = StormAlerts.length;\n// width: 440px;\nmsg.template=\"<style>h4 { text-align: center; margin: 10px; }\";\nmsg.template=msg.template+\"table {    margin-top: 10px; }\";\nmsg.template=msg.template+\"th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; background-color: #FFFFFF; width: 50%;}\";\nmsg.template=msg.template+\".classifier {background-color: rgb(85,150,230);text-align: center;}\";\nmsg.template=msg.template+\".title { background-color:LightGrey;}</style>\";\n\nmsg.template=msg.template+\"<table span=100%><tr><th>Alerts for Storm \"+msg.payload.stormName;\nmsg.template=msg.template+\"   <font color=\\\"red\\\">(CAT \"+msg.payload.severity.substr(msg.payload.severity.length - 1)+\")</font></th>\";\n//msg.template=msg.template+\"<table span=100%><tr><th>\"+msg.payload.severity+\"</th>\";\nfor (var i = 0; i < arrayLength; i++) {\n  msg.template = msg.template + \"<tr><td>\" + StormAlerts[i].alertMessage + \"</td></tr>\";\n}\nmsg.template = msg.template + \"</table>\"\n\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1130,
+        "y": 580,
+        "wires": [
+            [
+                "efc53db8.8345a",
+                "e30affa8.2a7cf8"
+            ]
+        ]
+    },
+    {
+        "id": "d8449871.80942",
+        "type": "function",
+        "z": "d427d164.4e1d18",
+        "name": "Extract Storm Names",
+        "func": "// Save the list of Storms\nflow.set(\"StormList\",msg.payload);\n\n// Build an array of Storm Names for the Drop down\nmsg.options = [];\nfor (i=0; i < msg.payload.length; i++) {\n    msg.options.push( msg.payload[i].stormName );\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 760,
+        "y": 280,
+        "wires": [
+            [
+                "40763149.438e48",
+                "fafee044.768ae8"
+            ]
+        ]
+    },
+    {
+        "id": "40763149.438e48",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Storm Name List",
+        "active": true,
+        "console": "false",
+        "complete": "options",
+        "x": 980,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "b093ec6f.8ac608",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Storm selected",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 1160,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "5ae67c1.b166304",
+        "type": "change",
+        "z": "d427d164.4e1d18",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 140,
+        "y": 280,
+        "wires": [
+            [
+                "b2d72d63.05e87"
+            ]
+        ]
+    },
+    {
+        "id": "4d328d54.a89664",
+        "type": "inject",
+        "z": "d427d164.4e1d18",
+        "name": "Prefill dropdown with existing storm names",
+        "topic": "",
+        "payload": "true",
+        "payloadType": "bool",
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "x": 230,
+        "y": 380,
+        "wires": [
+            [
+                "b2d72d63.05e87"
+            ]
+        ]
+    },
+    {
+        "id": "e4882e53.a442f",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Alert Listing",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 1090,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "e30affa8.2a7cf8",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "HTML Table",
+        "active": true,
+        "console": "false",
+        "complete": "template",
+        "x": 1350,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "cb6ac1d3.5d12d",
+        "type": "comment",
+        "z": "d427d164.4e1d18",
+        "name": "Generate the Alert Table",
+        "info": "",
+        "x": 1130,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "8aebdb17.4c4fb",
+        "type": "comment",
+        "z": "d427d164.4e1d18",
+        "name": "Refresh Alert table of selected Storm",
+        "info": "",
+        "x": 630,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "f6fabb92.3c5f",
+        "type": "comment",
+        "z": "d427d164.4e1d18",
+        "name": "Clear the Alert Table",
+        "info": "",
+        "x": 730,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "efd6c29e.074fa8",
+        "type": "comment",
+        "z": "d427d164.4e1d18",
+        "name": "Add a new transaction to a Blockchain asset (Add an Alert to a Storm)",
+        "info": "",
+        "x": 490,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "508a9854.55a2f8",
+        "type": "http request",
+        "z": "d427d164.4e1d18",
+        "name": "hyperledger - Create Storm Asset",
+        "method": "POST",
+        "ret": "obj",
+        "url": "http://<your-hyperledger-fabric-ip>:31090/api/Storm",
+        "tls": "",
+        "x": 700,
+        "y": 100,
+        "wires": [
+            [
+                "b7807be6.c5f458",
+                "5ae67c1.b166304"
+            ]
+        ]
+    },
+    {
+        "id": "b2d72d63.05e87",
+        "type": "http request",
+        "z": "d427d164.4e1d18",
+        "name": "Query Blockchain Asset List - aka Storm Names",
+        "method": "GET",
+        "ret": "obj",
+        "url": "http://<your-hyperledger-fabric-ip>:31090/api/Storm",
+        "tls": "",
+        "x": 440,
+        "y": 280,
+        "wires": [
+            [
+                "d8449871.80942"
+            ]
+        ]
+    },
+    {
+        "id": "fc9916f0.b3db1",
+        "type": "http request",
+        "z": "d427d164.4e1d18",
+        "name": "Get Alerts (transactions) for selected Storm",
+        "method": "GET",
+        "ret": "obj",
+        "url": "http://<your-hyperledger-fabric-ip>:31090/api/Storm/{{payload}}",
+        "tls": "",
+        "x": 790,
+        "y": 660,
+        "wires": [
+            [
+                "e5871660.65f41",
+                "e4882e53.a442f"
+            ]
+        ]
+    },
+    {
+        "id": "98418537.943cf8",
+        "type": "http request",
+        "z": "d427d164.4e1d18",
+        "name": "Blockchain Transaction Post",
+        "method": "POST",
+        "ret": "obj",
+        "url": "",
+        "tls": "",
+        "x": 1020,
+        "y": 1160,
+        "wires": [
+            [
+                "abe2c464.8e7268",
+                "71ea7351.3b7254"
+            ]
+        ]
+    },
+    {
+        "id": "146745db.87b47a",
+        "type": "ui_slider",
+        "z": "d427d164.4e1d18",
+        "name": "Change Storm Severity",
+        "label": "Change Storm Severity",
+        "group": "58b981e3.6d41c",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "topic": "",
+        "min": 0,
+        "max": "5",
+        "step": 1,
+        "x": 350,
+        "y": 880,
+        "wires": [
+            [
+                "a46d0c19.567f5",
+                "ce088d4f.499748"
+            ]
+        ]
+    },
+    {
+        "id": "18c7827b.997b3e",
+        "type": "function",
+        "z": "d427d164.4e1d18",
+        "name": "Severity",
+        "func": "var CurrentStorm = msg.payload;\nif( typeof( CurrentStorm ) == 'undefined' ) {\n   return null;\n}\nif( typeof( CurrentStorm.severity ) == 'undefined' ) {\n   return null;\n}\n// var severity = CurrentStorm.severity;\n// Take the last character, send it to the slider\n// severity (string) = ['CATEGORY_0', 'CATEGORY_1', 'CATEGORY_2', 'CATEGORY_3', 'CATEGORY_4', 'CATEGORY_5'],\nmsg.payload = parseInt(CurrentStorm.severity.substr( CurrentStorm.severity.length -1 ));\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 140,
+        "y": 920,
+        "wires": [
+            [
+                "146745db.87b47a",
+                "48647d90.43c6c4",
+                "ce088d4f.499748"
+            ]
+        ]
+    },
+    {
+        "id": "74262e6.94cd3d",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Severity Transaction",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 1020,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "a46d0c19.567f5",
+        "type": "function",
+        "z": "d427d164.4e1d18",
+        "name": "Prepare Blockchain Severity Update Transaction",
+        "func": "var NewSeverity = \"CATEGORY_\"+msg.payload.toString();\n\nvar CurrentStorm = flow.get(\"CurrentStorm\");\n\n// No storm is selected.\nif( typeof(CurrentStorm) == 'undefined' ) {\n    return null;\n}\nif( CurrentStorm === null) {\n    return null;\n}\n//{\"$class\": \"org.acme.sample.Alert\",\"storm\": \"resource:org.acme.sample.Storm#1512695376584.923\",\"alertId\":\"44\",\"alertMessage\":\"Storm Surge\"}\n// Create a new Alert\nmsg.payload = {\n    \"$class\": \"org.acme.sample.updateStormSeverity\",\n    \"storm\": \"resource:org.acme.sample.Storm#\"+CurrentStorm.stormId,\n    \"newSeverity\": NewSeverity,\n    \"timestamp\": Date.now()\n};\n\nvar SeverityData = JSON.stringify(msg.payload);\nmsg.url = \"http://<your-hyperledger-fabric-ip>:31090/api/updateStormSeverity?data=\"+SeverityData;\nmsg.headers = {\n    \"Content-Type\":\"application/json\",\n    \"Accept\":\"application/json\"\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 690,
+        "y": 880,
+        "wires": [
+            [
+                "74262e6.94cd3d",
+                "9cd02642.c80098"
+            ]
+        ]
+    },
+    {
+        "id": "f55203f.32afb8",
+        "type": "comment",
+        "z": "d427d164.4e1d18",
+        "name": "Slider - Change Severity of the Storm - CATEGORY_0 to CATEGORY_5",
+        "info": "",
+        "x": 500,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "5df1a362.44f634",
+        "type": "function",
+        "z": "d427d164.4e1d18",
+        "name": "Find Selected Storm",
+        "func": "var StormList = flow.get(\"StormList\");\nvar CurrentStormName = msg.payload;\n//var CurrentStorm = flow.get(\"CurrentStorm\");\nvar StormFound = false;\n\n// Look for the CurrentStormName in the list of Storms\nfor( i=0;i<StormList.length;i++) {\n    if (StormList[i].stormName === CurrentStormName) {\n        StormFound = true;\n        // Pass the entire Storm structure as payload\n        msg.payload = StormList[i];\n        break;\n    }\n}\nif( StormFound === false ) {\n    flow.set(\"CurrentStorm\",null);\n    return [ false, null ];\n}\n\nflow.set(\"CurrentStorm\",msg.payload);\nreturn [ null, msg ];",
+        "outputs": "2",
+        "noerr": 0,
+        "x": 200,
+        "y": 580,
+        "wires": [
+            [
+                "e5871660.65f41",
+                "62b2b03c.428778"
+            ],
+            [
+                "18c7827b.997b3e",
+                "96a165ea.38f3f"
+            ]
+        ]
+    },
+    {
+        "id": "71ea7351.3b7254",
+        "type": "change",
+        "z": "d427d164.4e1d18",
+        "name": "Repopulate the Table with new Alert",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "CurrentStorm",
+                "tot": "flow"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1350,
+        "y": 1160,
+        "wires": [
+            [
+                "b9337a8.38dee08"
+            ]
+        ]
+    },
+    {
+        "id": "62b2b03c.428778",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "No dropdown selection",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 440,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "96a165ea.38f3f",
+        "type": "change",
+        "z": "d427d164.4e1d18",
+        "name": "Pass StormId to Blockchain URL",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.stormId",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 450,
+        "y": 660,
+        "wires": [
+            [
+                "fc9916f0.b3db1"
+            ]
+        ]
+    },
+    {
+        "id": "48647d90.43c6c4",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Current Storm Severity",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 350,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "9cd02642.c80098",
+        "type": "http request",
+        "z": "d427d164.4e1d18",
+        "name": "Blockchain Transaction Post",
+        "method": "POST",
+        "ret": "obj",
+        "url": "",
+        "tls": "",
+        "x": 1040,
+        "y": 880,
+        "wires": [
+            [
+                "8a8ab575.50891",
+                "d06b2eec.12136"
+            ]
+        ]
+    },
+    {
+        "id": "8a8ab575.50891",
+        "type": "debug",
+        "z": "d427d164.4e1d18",
+        "name": "Blockchain transaction response",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 1340,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "d06b2eec.12136",
+        "type": "change",
+        "z": "d427d164.4e1d18",
+        "name": "Repopulate the Table with new Severity",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "CurrentStorm",
+                "tot": "flow"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1360,
+        "y": 880,
+        "wires": [
+            [
+                "b9337a8.38dee08"
+            ]
+        ]
+    },
+    {
+        "id": "b9337a8.38dee08",
+        "type": "link out",
+        "z": "d427d164.4e1d18",
+        "name": "",
+        "links": [
+            "ae37628c.556898"
+        ],
+        "x": 1595,
+        "y": 1020,
+        "wires": []
+    },
+    {
+        "id": "ae37628c.556898",
+        "type": "link in",
+        "z": "d427d164.4e1d18",
+        "name": "",
+        "links": [
+            "b9337a8.38dee08"
+        ],
+        "x": 175,
+        "y": 660,
+        "wires": [
+            [
+                "96a165ea.38f3f"
+            ]
+        ]
+    },
+    {
+        "id": "ce088d4f.499748",
+        "type": "ui_gauge",
+        "z": "d427d164.4e1d18",
+        "name": "Severity Gauge",
+        "group": "58b981e3.6d41c",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "gtype": "gage",
+        "title": "Storm Severity",
+        "label": "units",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "5",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 580,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "67d891a9.f3673",
+        "type": "ui_group",
+        "z": "",
+        "name": "Issue Storm Alert",
+        "tab": "13de00e.d375b7f",
+        "order": 2,
+        "disp": true,
+        "width": "6"
+    },
+    {
+        "id": "ed77f8b5.4b2178",
+        "type": "ui_group",
+        "z": "",
+        "name": "Create a Storm Event",
+        "tab": "13de00e.d375b7f",
+        "order": 1,
+        "disp": true,
+        "width": "6"
+    },
+    {
+        "id": "58b981e3.6d41c",
+        "type": "ui_group",
+        "z": "",
+        "name": "Severity Warning",
+        "tab": "13de00e.d375b7f",
+        "order": 3,
+        "disp": true,
+        "width": "6"
+    },
+    {
+        "id": "13de00e.d375b7f",
+        "type": "ui_tab",
+        "z": "",
+        "name": "Blockchain Storm Demo",
+        "icon": "dashboard"
+    }
+]
